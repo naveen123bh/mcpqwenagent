@@ -1,0 +1,9 @@
+langchain-ollama mcp
+mcp[cli]
+ddgs
+langchain
+langchain_ollama
+langchain-community
+langchain-ollama
+duckduckgo-search
+requests
