@@ -1,5 +1,5 @@
 # =========================================
-# TOOLS MODULE (MCP-READY CLEAN VERSION)
+# TOOLS MODULE (MCP-READY SAFE VERSION)
 # =========================================
 
 import sys
@@ -11,12 +11,34 @@ from ddgs import DDGS
 import subprocess
 
 # =========================
+# 🔒 SANDBOX CONFIG
+# =========================
+BASE_DIR = "workspace"
+
+# Ensure workspace exists
+os.makedirs(BASE_DIR, exist_ok=True)
+
+
+def safe_path(path: str) -> str:
+    """
+    Prevent access outside workspace directory
+    """
+    full_path = os.path.abspath(os.path.join(BASE_DIR, path))
+
+    if not full_path.startswith(os.path.abspath(BASE_DIR)):
+        raise Exception("❌ Access denied خارج workspace")
+
+    return full_path
+
+
+# =========================
 # FILE TOOLS
 # =========================
 def read_file(filename: str) -> str:
     """Read file content"""
     try:
-        with open(filename, "r") as f:
+        filename = safe_path(filename)
+        with open(filename, "r", encoding="utf-8") as f:
             return f.read()
     except Exception as e:
         return f"ERROR: {str(e)}"
@@ -25,9 +47,64 @@ def read_file(filename: str) -> str:
 def write_file(filename: str, content: str) -> str:
     """Write content to file"""
     try:
-        with open(filename, "w") as f:
+        filename = safe_path(filename)
+
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+
+        with open(filename, "w", encoding="utf-8") as f:
             f.write(content)
+
         return f"Saved to {filename}"
+    except Exception as e:
+        return f"ERROR: {str(e)}"
+
+
+def delete_file(filename: str) -> str:
+    """Delete file"""
+    try:
+        filename = safe_path(filename)
+        os.remove(filename)
+        return f"{filename} deleted"
+    except Exception as e:
+        return f"ERROR: {str(e)}"
+
+
+def move_file(src: str, dst: str) -> str:
+    """Move file"""
+    try:
+        src = safe_path(src)
+        dst = safe_path(dst)
+
+        # Ensure destination folder exists
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+
+        shutil.move(src, dst)
+        return f"{src} moved to {dst}"
+    except Exception as e:
+        return f"ERROR: {str(e)}"
+
+
+def create_folder(foldername: str) -> str:
+    """Create folder"""
+    try:
+        foldername = safe_path(foldername)
+        os.makedirs(foldername, exist_ok=True)
+        return f"Folder '{foldername}' created"
+    except Exception as e:
+        return f"ERROR: {str(e)}"
+
+
+def list_files(path: str = ".") -> str:
+    """List files in directory"""
+    try:
+        path = safe_path(path)
+        files = os.listdir(path)
+
+        if not files:
+            return "No files found"
+
+        return "\n".join(files)
     except Exception as e:
         return f"ERROR: {str(e)}"
 
@@ -54,12 +131,11 @@ def run_python(code: str) -> str:
 
 
 # =========================
-# ADVANCED DEBUG TOOL (🔥 IMPORTANT)
+# ADVANCED DEBUG TOOL
 # =========================
 def debug_python(code: str) -> dict:
     """
     Run Python code and return structured debug info
-    (line number + highlighted code)
     """
     old_stdout = sys.stdout
     sys.stdout = buffer = io.StringIO()
@@ -74,12 +150,10 @@ def debug_python(code: str) -> dict:
     except Exception as e:
         tb = traceback.format_exc()
 
-        # Extract error line number
         import re
         match = re.search(r'File "<string>", line (\d+)', tb)
         lineno = int(match.group(1)) if match else None
 
-        # Highlight code
         code_lines = code.split("\n")
         visual = ""
 
@@ -100,10 +174,10 @@ def debug_python(code: str) -> dict:
 
 
 # =========================
-# SHELL / OS TOOLS
+# SHELL / OS TOOLS ⚠️
 # =========================
 def run_shell(command: str) -> str:
-    """Run shell command"""
+    """Run shell command (⚠️ use carefully)"""
     try:
         result = subprocess.run(
             command, shell=True, capture_output=True, text=True
@@ -114,33 +188,6 @@ def run_shell(command: str) -> str:
         else:
             return f"ERROR: {result.stderr.strip()}"
 
-    except Exception as e:
-        return f"ERROR: {str(e)}"
-
-
-def create_folder(foldername: str) -> str:
-    """Create folder"""
-    try:
-        os.makedirs(foldername, exist_ok=True)
-        return f"Folder '{foldername}' created"
-    except Exception as e:
-        return f"ERROR: {str(e)}"
-
-
-def delete_file(filename: str) -> str:
-    """Delete file"""
-    try:
-        os.remove(filename)
-        return f"{filename} deleted"
-    except Exception as e:
-        return f"ERROR: {str(e)}"
-
-
-def move_file(src: str, dst: str) -> str:
-    """Move file"""
-    try:
-        shutil.move(src, dst)
-        return f"{src} moved to {dst}"
     except Exception as e:
         return f"ERROR: {str(e)}"
 
